@@ -3,21 +3,31 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .box { border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f4f4f4; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { color: #004683; margin-top: 0; border-bottom: 2px solid #004683; padding-bottom: 10px; }
+        .controls { background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #004683; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        #status-bar { margin: 10px 0; padding: 10px; border-radius: 4px; background: #e7f3ff; color: #004683; }
+        button { padding: 8px 16px; background: #004683; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #ccc; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>Reporte Tacógrafo v12.0</h3>
-        <select id="selYear"><option value="2024">2024</option><option value="2025" selected>2025</option></select>
-        <button id="btnRun">Generar Informe</button>
-        <div id="status-bar" style="margin-top:10px; color:blue;">Listo.</div>
+    <div class="container">
+        <h2>🚚 Reporte Oficial TGD (v13.0)</h2>
+        <div class="controls">
+            <span>Ejercicio:</span>
+            <select id="selYear"><option value="2024">2024</option><option value="2025" selected>2025</option></select>
+            <button id="btnRun">Generar Informe</button>
+        </div>
+        <div id="status-bar">Listo para analizar la flota.</div>
         <table>
-            <thead><tr><th>Vehículo</th><th>Matrícula</th><th>Km Ini</th><th>Km Fin</th><th>Total</th></tr></thead>
+            <thead>
+                <tr><th>Vehículo</th><th>Matrícula</th><th style="text-align:right">Odo. Inicial</th><th style="text-align:right">Odo. Final</th><th style="text-align:right">Total</th></tr>
+            </thead>
             <tbody id="tblBody"></tbody>
         </table>
     </div>
