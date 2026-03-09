@@ -2,59 +2,50 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Gasóleo</title>
+    <title>Gasóleo Profesional v2.0</title>
     <style>
-        body { font-family: "Open Sans", Arial, sans-serif; background-color: #f2f4f7; color: #333; margin: 0; padding: 30px; }
-        .main-card { background: white; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; padding: 40px; }
-        .header { display: flex; align-items: center; border-bottom: 2px solid #243665; padding-bottom: 20px; margin-bottom: 30px; }
-        .header h1 { color: #243665; margin: 0; font-size: 24px; font-weight: 600; }
-        .toolbar { background: #f8f9fa; padding: 25px; border-radius: 6px; border: 1px solid #e1e4e8; display: flex; gap: 20px; align-items: center; margin-bottom: 30px; }
-        select, button { padding: 12px 20px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; outline: none; }
-        button { background: #243665; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #1a284d; opacity: 0.9; }
+        body { font-family: Arial, sans-serif; background-color: #f7f9fa; margin: 0; padding: 25px; color: #333; }
+        .geotab-card { background: white; border: 1px solid #d1d9e0; border-radius: 4px; max-width: 1100px; margin: 0 auto; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h1 { color: #243665; font-size: 20px; margin-top: 0; border-bottom: 2px solid #243665; padding-bottom: 10px; }
+        .controls { background: #f0f2f5; padding: 15px; border-radius: 4px; display: flex; gap: 15px; align-items: center; margin-bottom: 20px; border: 1px solid #e1e4e8; }
+        select { padding: 8px; border-radius: 3px; border: 1px solid #ccc; }
+        button { background: #243665; color: white; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1a284d; }
         #btnCsv { background: #28a745; }
-        #status-bar { padding: 10px 0; color: #243665; font-weight: bold; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f1f3f5; color: #555; padding: 15px; text-align: left; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
-        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
-        tr:hover { background: #f9fbff; }
-        .num { text-align: right; font-family: "Roboto Mono", monospace; }
-        .total-col { font-weight: bold; color: #243665; background-color: #f0f4ff; }
+        #status-bar { font-size: 13px; font-weight: bold; color: #243665; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #e1e4e8; }
+        th { background: #f8f9fa; color: #555; font-size: 11px; text-transform: uppercase; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
+        td { padding: 12px; font-size: 13px; border-bottom: 1px solid #eee; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .highlight { font-weight: bold; color: #243665; background-color: #f1f4ff; }
+        tr:hover { background-color: #fafafa; }
     </style>
 </head>
 <body>
-    <div class="main-card">
-        <div class="header">
-            <h1>⛽ Reporte Anual de Kilometraje (Gasóleo Profesional)</h1>
-        </div>
-        
-        <div class="toolbar">
-            <div>
-                <label style="font-weight:bold; margin-right: 10px;">Ejercicio Fiscal:</label>
-                <select id="selYear">
-                    <option value="2024">2024</option>
-                    <option value="2025" selected>2025</option>
-                </select>
-            </div>
+    <div class="geotab-card">
+        <h1>⛽ Reporte Gasóleo Profesional (v2.0)</h1>
+        <div class="controls">
+            <label style="font-size: 13px; font-weight: bold;">Ejercicio:</label>
+            <select id="selYear">
+                <option value="2024">2024</option>
+                <option value="2025" selected>2025</option>
+            </select>
             <button id="btnRun">Generar Informe</button>
-            <button id="btnCsv" style="display:none;">Exportar Excel (.csv)</button>
+            <button id="btnCsv" style="display:none;">Descargar CSV</button>
         </div>
-
-        <div id="status-bar" style="display:none;">Listo para procesar.</div>
-
-        <table id="tblData">
+        <div id="status-bar">Cargue los archivos en GitHub y refresque la página.</div>
+        <table>
             <thead>
                 <tr>
-                    <th style="width:25%">Vehículo</th>
-                    <th style="width:15%">Matrícula</th>
-                    <th style="width:20%; text-align:right">Odo. Inicial</th>
-                    <th style="width:20%; text-align:right">Odo. Final</th>
-                    <th style="width:20%; text-align:right">Total Recorrido</th>
+                    <th style="width: 25%;">Vehículo</th>
+                    <th style="width: 15%;">Matrícula</th>
+                    <th style="width: 20%; text-align: right;">Odómetro Inicial</th>
+                    <th style="width: 20%; text-align: right;">Odómetro Final</th>
+                    <th style="width: 20%; text-align: right;">KM Totales</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody></tbody>
         </table>
     </div>
     <script src="app.js"></script>
