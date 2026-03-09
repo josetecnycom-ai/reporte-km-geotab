@@ -1,33 +1,57 @@
 geotab.addin.reporteKm = function () {
+    var reportData = []; // Aquí guardaremos los datos para poder ordenarlos y exportarlos
+
     return {
         initialize: function (api, state, callback) {
-            var btn = document.getElementById("btnRun");
+            var btnRun = document.getElementById("btnRun");
+            var btnExport = document.getElementById("btnExport");
             var status = document.getElementById("status-bar");
             var tbody = document.getElementById("tblBody");
 
-            btn.onclick = function () {
-                btn.disabled = true;
+            btnRun.onclick = function () {
+                // Reiniciamos la interfaz
+                btnRun.disabled = true;
+                btnExport.style.display = "none";
                 tbody.innerHTML = "";
+                reportData = []; 
                 var selectedYear = parseInt(document.getElementById("selYear").value);
-                status.innerHTML = "<strong>Iniciando análisis de odómetro CAN/TGD...</strong>";
+                status.innerHTML = "<strong>Analizando odómetros CAN/TGD. Por favor, espere...</strong>";
 
                 api.call("Get", { typeName: "Device" }, function (devices) {
                     var i = 0;
-                    var encontrados = 0;
                     var currentYear = new Date().getFullYear();
 
-                    // Procesamiento secuencial para NO bloquear la pantalla
                     function procesarSiguiente() {
                         if (i >= devices.length) {
-                            status.innerHTML = "<strong>¡Proceso completado!</strong> Vehículos con datos: " + encontrados;
-                            btn.disabled = false;
+                            // 1. ORDENAR ALFABÉTICAMENTE POR NOMBRE DE VEHÍCULO
+                            reportData.sort(function(a, b) {
+                                return a.name.localeCompare(b.name);
+                            });
+
+                            // 2. DIBUJAR LA TABLA YA ORDENADA
+                            reportData.forEach(function(row) {
+                                var tr = "<tr>" +
+                                    "<td><strong>" + row.name + "</strong></td>" +
+                                    "<td>" + row.plate + "</td>" +
+                                    "<td class='num'>" + row.ini.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
+                                    "<td class='num'>" + row.fin.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
+                                    "<td class='num total-col'>" + row.total.toLocaleString('es-ES', {maximumFractionDigits:1}) + " km</td>" +
+                                    "</tr>";
+                                tbody.innerHTML += tr;
+                            });
+
+                            // 3. MOSTRAR RESULTADO Y BOTÓN EXPORTAR
+                            status.innerHTML = "<strong>¡Proceso completado!</strong> Vehículos analizados con éxito: " + reportData.length;
+                            btnRun.disabled = false;
+                            if (reportData.length > 0) {
+                                btnExport.style.display = "inline-flex"; // Mostramos el botón CSV
+                            }
                             return;
                         }
 
                         var dev = devices[i];
-                        status.innerText = "Analizando (" + (i + 1) + "/" + devices.length + "): " + dev.name;
+                        status.innerText = "Extrayendo datos (" + (i + 1) + "/" + devices.length + "): " + dev.name;
 
-                        // 1. Buscamos el PRIMER dato del año seleccionado (Francotirador: resultsLimit 1)
                         api.call("Get", {
                             typeName: "StatusData",
                             resultsLimit: 1,
@@ -40,37 +64,30 @@ geotab.addin.reporteKm = function () {
                             var iniKm = (resIni && resIni.length > 0) ? resIni[0].data / 1000 : null;
 
                             if (iniKm === null) {
-                                // Si no hay datos, saltamos al siguiente rápidamente
                                 i++;
-                                setTimeout(procesarSiguiente, 20);
+                                setTimeout(procesarSiguiente, 15);
                                 return;
                             }
 
-                            // Función interna para pintar la fila si todo es correcto
-                            function pintarFila(finKm) {
+                            function guardarDato(finKm) {
                                 if (finKm !== null) {
                                     var total = finKm - iniKm;
-                                    
-                                    // EL FILTRO MÁGICO: Ignoramos el error de 1.7 millones de km
                                     if (total >= 0 && finKm < 1600000) {
-                                        encontrados++;
-                                        var row = "<tr>" +
-                                            "<td>" + dev.name + "</td>" +
-                                            "<td>" + (dev.licensePlate || "-") + "</td>" +
-                                            "<td style='text-align:right'>" + iniKm.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
-                                            "<td style='text-align:right'>" + finKm.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
-                                            "<td style='text-align:right; font-weight:bold; color:#004683; background:#e8f4f8;'>" + total.toLocaleString('es-ES', {maximumFractionDigits:1}) + " km</td>" +
-                                            "</tr>";
-                                        tbody.innerHTML += row;
+                                        // Guardamos el dato en nuestra matriz en lugar de pintarlo directamente
+                                        reportData.push({
+                                            name: dev.name,
+                                            plate: dev.licensePlate || "-",
+                                            ini: iniKm,
+                                            fin: finKm,
+                                            total: total
+                                        });
                                     }
                                 }
                                 i++;
-                                setTimeout(procesarSiguiente, 20); // Pausa para que el navegador respire
+                                setTimeout(procesarSiguiente, 15);
                             }
 
-                            // 2. Buscamos el ÚLTIMO dato
                             if (selectedYear < currentYear) {
-                                // Si es un año pasado (ej. 2025), el final es el inicio de 2026
                                 api.call("Get", {
                                     typeName: "StatusData",
                                     resultsLimit: 1,
@@ -81,16 +98,15 @@ geotab.addin.reporteKm = function () {
                                     }
                                 }, function (resFin) {
                                     var finKm = (resFin && resFin.length > 0) ? resFin[0].data / 1000 : null;
-                                    pintarFila(finKm);
+                                    guardarDato(finKm);
                                 });
                             } else {
-                                // Si es el año actual (ej. 2026), el final es el odómetro a día de HOY
                                 api.call("Get", {
                                     typeName: "DeviceStatusInfo",
                                     search: { deviceSearch: { id: dev.id } }
                                 }, function (resStatus) {
                                     var finKm = (resStatus && resStatus.length > 0 && resStatus[0].odometer) ? resStatus[0].odometer / 1000 : null;
-                                    pintarFila(finKm);
+                                    guardarDato(finKm);
                                 });
                             }
                         });
@@ -99,6 +115,34 @@ geotab.addin.reporteKm = function () {
                     procesarSiguiente();
                 });
             };
+
+            // LÓGICA PARA EXPORTAR A CSV (Formato Excel España)
+            btnExport.onclick = function() {
+                var csv = "Vehículo;Matrícula;Odómetro Inicial (km);Odómetro Final (km);Total Recorrido (km)\n";
+                
+                reportData.forEach(function(row) {
+                    // Quitamos los puntos de los miles para que Excel no se confunda, solo dejamos la coma decimal
+                    var iniStr = row.ini.toLocaleString('es-ES', {maximumFractionDigits:1, useGrouping:false});
+                    var finStr = row.fin.toLocaleString('es-ES', {maximumFractionDigits:1, useGrouping:false});
+                    var totStr = row.total.toLocaleString('es-ES', {maximumFractionDigits:1, useGrouping:false});
+                    
+                    csv += row.name + ";" + row.plate + ";" + iniStr + ";" + finStr + ";" + totStr + "\n";
+                });
+
+                // Añadimos el BOM (\ufeff) para que Excel reconozca los acentos y las ñ
+                var blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement("a");
+                var url = URL.createObjectURL(blob);
+                var year = document.getElementById("selYear").value;
+                
+                link.setAttribute("href", url);
+                link.setAttribute("download", "Reporte_Gasoleo_" + year + ".csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
             callback();
         },
         focus: function () {}, blur: function () {}
