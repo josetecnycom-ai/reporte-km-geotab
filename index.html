@@ -2,32 +2,59 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>Reporte KM</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .header { background: #243665; color: white; padding: 10px; border-radius: 4px; }
-        .container { margin-top: 20px; border: 1px solid #ccc; padding: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #eee; }
-        button { background: #243665; color: white; padding: 10px; border: none; border-radius: 3px; cursor: pointer; }
+        body { font-family: "Segoe UI", Tahoma, sans-serif; background-color: #f7f7f7; padding: 30px; margin: 0; }
+        .addin-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 25px; max-width: 1000px; margin: auto; }
+        .header { border-bottom: 2px solid #243665; margin-bottom: 20px; padding-bottom: 10px; }
+        h1 { color: #243665; font-size: 24px; margin: 0; }
+        .controls { background: #eee; padding: 20px; border-radius: 6px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        button { background: #243665; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        button:hover { background: #1a284d; }
+        button:disabled { background: #999; }
+        #btnCsv { background: #28a745; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #243665; color: white; padding: 12px; text-align: left; font-size: 13px; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        tr:hover { background-color: #f1f5ff; }
+        .total-cell { font-weight: bold; color: #243665; }
+        #status { font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #555; }
     </style>
 </head>
 <body>
-    <div id="geotab-addin-content">
-        <div class="header"><h1>Kilómetros Anuales Tacógrafo</h1></div>
-        <div class="container">
-            <label>Año: </label>
-            <select id="selYear"><option value="2024">2024</option><option value="2025">2025</option></select>
-            <button id="btnRun">Generar Reporte</button>
-            <button id="btnCsv" style="display:none; background: #28a745;">Descargar CSV</button>
-            <div id="status" style="margin-top:10px; color: blue;"></div>
-            <table id="tblData">
-                <thead><tr><th>Vehículo</th><th>Matrícula</th><th>Odo Inicial</th><th>Odo Final</th><th>Total KM</th></tr></thead>
-                <tbody></tbody>
-            </table>
+    <div class="addin-card">
+        <div class="header"><h1>⛽ Reporte Anual de Kilometraje (Gasóleo Profesional)</h1></div>
+        <p style="color: #666; font-size: 14px;">Datos extraídos directamente de los archivos TGD del tacógrafo.</p>
+        
+        <div class="controls">
+            <div>
+                <label style="font-weight:bold">Ejercicio Fiscal: </label>
+                <select id="selYear">
+                    <option value="2023">2023</option>
+                    <option value="2024" selected>2024</option>
+                    <option value="2025">2025</option>
+                </select>
+            </div>
+            <button id="btnRun">Generar Informe</button>
+            <button id="btnCsv" style="display:none;">Exportar Excel (.csv)</button>
         </div>
+        
+        <div id="status">Listo para consultar.</div>
+        
+        <table id="tblData">
+            <thead>
+                <tr>
+                    <th>Vehículo</th>
+                    <th>Matrícula</th>
+                    <th>Odo. Inicial</th>
+                    <th>Odo. Final</th>
+                    <th>Total Recorrido</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
     </div>
     <script src="app.js"></script>
 </body>
