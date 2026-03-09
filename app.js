@@ -1,6 +1,4 @@
 geotab.addin.reporteKm = function () {
-    let listado = [];
-    
     return {
         initialize: function (api, state, callback) {
             const btn = document.getElementById("btnRun");
@@ -12,90 +10,84 @@ geotab.addin.reporteKm = function () {
                 btn.disabled = true;
                 btnCsv.style.display = "none";
                 tbody.innerHTML = "";
-                status.style.display = "block";
+                status.innerText = "Cargando flota...";
+                
                 const year = document.getElementById("selYear").value;
-                listado = [];
+                const DIAG_TGD = "DiagnosticTachographTotalVehicleDistanceId";
+                const DIAG_ODO = "DiagnosticOdometerId";
 
                 try {
-                    status.innerText = "1/3 - Localizando vehículos...";
-                    let devices = await api.call("Get", { typeName: "Device" });
+                    const devices = await api.call("Get", { typeName: "Device" });
                     devices.sort((a, b) => a.name.localeCompare(b.name));
 
-                    // Los 3 IDs más probables para datos de Tacógrafo TGD en España
-                    const TGD_DIAGS = [
-                        "DiagnosticTachographTotalVehicleDistanceId",
-                        "DiagnosticTachographTotalDistanceId",
-                        "DiagnosticOdometerAdjustmentId"
-                    ];
+                    // Preparamos todas las llamadas en un solo paquete (MultiCall)
+                    let calls = [];
+                    devices.forEach(dev => {
+                        // Llamada 1: Último valor antes de empezar el año (Odo Inicial)
+                        calls.push(["Get", {
+                            typeName: "StatusData", resultsLimit: 1,
+                            search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: DIAG_TGD }, toDate: `${year}-01-01T00:00:00Z` }
+                        }]);
+                        // Llamada 2: Último valor antes de terminar el año (Odo Final)
+                        calls.push(["Get", {
+                            typeName: "StatusData", resultsLimit: 1,
+                            search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: DIAG_TGD }, toDate: `${year}-12-31T23:59:59Z` }
+                        }]);
+                    });
 
+                    status.innerText = `Procesando ${devices.length} vehículos simultáneamente...`;
+                    const allResults = await api.call("MultiCall", { calls: calls });
+
+                    let listado = [];
                     for (let i = 0; i < devices.length; i++) {
-                        let dev = devices[i];
-                        status.innerText = `2/3 - Analizando sensores TGD (${i + 1}/${devices.length}): ${dev.name}...`;
+                        const dev = devices[i];
+                        const resIni = allResults[i * 2];
+                        const resFin = allResults[(i * 2) + 1];
 
-                        let foundData = null;
+                        if (resIni.length > 0 && resFin.length > 0) {
+                            let iKm = resIni[0].data / 1000;
+                            let fKm = resFin[0].data / 1000;
+                            
+                            // FILTRO DE SEGURIDAD: Si el camión marca más de 1.5 millones de KM, 
+                            // es un error de centralita (como el de 1.7M que vimos). Lo ignoramos.
+                            if (fKm > 1500000) continue; 
 
-                        // Probamos cada sensor hasta encontrar uno que tenga datos reales
-                        for (let diagId of TGD_DIAGS) {
-                            try {
-                                const [resIni, resFin] = await Promise.all([
-                                    api.call("Get", {
-                                        typeName: "StatusData",
-                                        resultsLimit: 1,
-                                        search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: diagId }, fromDate: `${year}-01-01T00:00:00Z` }
-                                    }),
-                                    api.call("Get", {
-                                        typeName: "StatusData",
-                                        resultsLimit: 1,
-                                        search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: diagId }, toDate: `${year}-12-31T23:59:59Z` }
-                                    })
-                                ]);
+                            let total = fKm - iKm;
 
-                                if (resIni.length > 0 && resFin.length > 0) {
-                                    const valIni = resIni[0].data / 1000;
-                                    const valFin = resFin[0].data / 1000;
-                                    const diff = valFin - valIni;
-
-                                    // Filtro de seguridad: Si el dato es coherente (menos de 1.5M km y positivo)
-                                    if (diff >= 0 && valFin < 1500000) {
-                                        foundData = { i: valIni, f: valFin, t: diff, sensor: diagId };
-                                        break; // Encontrado sensor correcto, saltamos al siguiente vehículo
-                                    }
-                                }
-                            } catch (e) { continue; }
-                        }
-
-                        if (foundData) {
-                            listado.push({ n: dev.name, m: dev.licensePlate || "S/M", ...foundData });
-                            tbody.innerHTML += `
-                                <tr>
-                                    <td>${dev.name}</td>
-                                    <td><strong>${dev.licensePlate || "S/M"}</strong></td>
-                                    <td style="text-align:right">${foundData.i.toLocaleString('es-ES', {minimumFractionDigits:1})}</td>
-                                    <td style="text-align:right">${foundData.f.toLocaleString('es-ES', {minimumFractionDigits:1})}</td>
-                                    <td style="text-align:right; font-weight:bold; color:#243665; background:#e8f4f8;">${foundData.t.toLocaleString('es-ES', {minimumFractionDigits:1})} km</td>
-                                </tr>`;
-                        } else {
-                            tbody.innerHTML += `<tr style="color: #999;"><td>${dev.name}</td><td>${dev.licensePlate || "S/M"}</td><td colspan="3" style="text-align:center">No se detectan datos TGD válidos</td></tr>`;
+                            if (total > 0) {
+                                listado.push({ n: dev.name, m: dev.licensePlate || "S/M", i: iKm, f: fKm, t: total });
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${dev.name}</td>
+                                        <td><strong>${dev.licensePlate || "S/M"}</strong></td>
+                                        <td style="text-align:right">${iKm.toLocaleString('es-ES', {minimumFractionDigits:1})}</td>
+                                        <td style="text-align:right">${fKm.toLocaleString('es-ES', {minimumFractionDigits:1})}</td>
+                                        <td style="text-align:right; font-weight:bold; color:#243665; background:#e8f4f8;">${total.toLocaleString('es-ES', {minimumFractionDigits:1})} km</td>
+                                    </tr>`;
+                            }
                         }
                     }
 
-                    status.innerText = `3/3 - Informe finalizado. ${listado.length} vehículos con datos correctos.`;
+                    status.innerText = `¡Listo! Se han recuperado ${listado.length} vehículos con datos válidos.`;
                     if (listado.length > 0) btnCsv.style.display = "inline-block";
+                    window.listadoData = listado; // Guardar para CSV
 
                 } catch (e) {
-                    status.innerText = "Error: " + e.message;
+                    status.innerText = "Error de conexión: " + e.message;
+                    console.error(e);
                 } finally {
                     btn.disabled = false;
                 }
             });
 
             btnCsv.addEventListener("click", function () {
-                let csv = "\uFEFFVehículo;Matrícula;Km Inicial;Km Final;Total Recorrido\n";
-                listado.forEach(r => { csv += `${r.n};${r.m};${r.i.toFixed(1).replace('.',',')};${r.f.toFixed(1).replace('.',',')};${r.t.toFixed(1).replace('.',',')}\n`; });
+                if (!window.listadoData) return;
+                let csv = "\uFEFFVehículo;Matrícula;Odo Inicial;Odo Final;Total\n";
+                window.listadoData.forEach(r => { csv += `${r.n};${r.m};${r.i.toFixed(1).replace('.',',')};${r.f.toFixed(1).replace('.',',')};${r.t.toFixed(1).replace('.',',')}\n`; });
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `Reporte_Gasoleo_TGD_Final.csv`;
+                link.download = `Reporte_Gasoleo_v8.csv`;
                 link.click();
             });
 
