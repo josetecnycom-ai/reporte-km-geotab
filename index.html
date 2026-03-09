@@ -2,48 +2,51 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Reporte TGD v10.0</title>
+    <title>Reporte TGD v11.0</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
-        .container { background: white; padding: 20px; border-radius: 8px; border-top: 5px solid #243665; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2 { color: #243665; margin-top: 0; }
-        .status { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 4px; margin: 15px 0; border: 1px solid #bee5eb; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; }
+        .main-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+        h1 { color: #243665; font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .status-msg { padding: 12px; background: #e3f2fd; color: #0d47a1; border-radius: 6px; margin: 15px 0; font-weight: 500; border: 1px solid #bbdefb; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #243665; color: white; padding: 12px; text-align: left; font-size: 13px; }
-        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        button { padding: 10px 15px; background: #243665; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:disabled { background: #999; }
-        #btnCsv { background: #28a745; margin-left: 10px; }
+        th { background: #243665; color: white; padding: 12px; text-align: left; font-size: 13px; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #btnRun { background: #243665; color: white; }
+        #btnRun:hover { background: #1a2a4d; }
+        #btnCsv { background: #2ecc71; color: white; }
+        #btnRun:disabled { background: #cbd5e0; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🚚 Reporte Oficial TGD (v10.0)</h2>
-        <p>Este informe extrae los datos directamente del tacógrafo, filtrando errores de centralita.</p>
-        
-        <div style="margin-bottom: 15px;">
-            Ejercicio: 
-            <select id="selYear">
-                <option value="2024">2024</option>
-                <option value="2025" selected>2025</option>
-            </select>
-            <button id="btnRun">Generar Informe</button>
-            <button id="btnCsv" style="display:none;">Descargar Excel</button>
+    <div class="main-card">
+        <h1>📊 Kilometraje Tacógrafo Oficial (v11.0)</h1>
+        <div class="btn-group">
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:12px; color: #666;">Seleccionar Año:</label>
+                <select id="selYear" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+            </div>
+            <button id="btnRun" style="align-self: flex-end;">Generar Informe</button>
+            <button id="btnCsv" style="align-self: flex-end; display:none;">Descargar CSV</button>
         </div>
 
-        <div id="status-bar" class="status">Listo para empezar.</div>
+        <div id="status-bar" class="status-msg">Esperando instrucción...</div>
 
-        <table id="tblData">
+        <table>
             <thead>
                 <tr>
                     <th>Vehículo</th>
                     <th>Matrícula</th>
-                    <th style="text-align:right">Odo Inicial</th>
-                    <th style="text-align:right">Odo Final</th>
-                    <th style="text-align:right">Total Recorrido</th>
+                    <th style="text-align:right">Km Ini. (TGD)</th>
+                    <th style="text-align:right">Km Fin. (TGD)</th>
+                    <th style="text-align:right">Total Año</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody id="tblData"></tbody>
         </table>
     </div>
     <script src="app.js"></script>
