@@ -9,8 +9,7 @@ geotab.addin.reporteKm = () => {
             btn.addEventListener("click", async () => {
                 btn.disabled = true;
                 statusBar.style.display = "block";
-                statusBar.className = "loading";
-                statusBar.innerText = "Iniciando consulta masiva de flota...";
+                statusBar.innerText = "Consultando flota y datos de tacógrafo...";
                 
                 const year = document.getElementById("selYear").value;
                 const tbody = document.querySelector("#tblData tbody");
@@ -18,27 +17,25 @@ geotab.addin.reporteKm = () => {
                 listado = [];
 
                 try {
-                    // 1. Obtener todos los vehículos sin filtros iniciales para no perder ninguno
-                    const devices = await api.call("Get", { typeName: "Device" });
+                    // 1. Obtener y ordenar vehículos alfabéticamente
+                    let devices = await api.call("Get", { typeName: "Device" });
+                    devices.sort((a, b) => a.name.localeCompare(b.name));
                     
-                    let procesados = 0;
-
                     for (const dev of devices) {
-                        procesados++;
-                        statusBar.innerText = `Procesando ${procesados} de ${devices.length} vehículos...`;
+                        statusBar.innerText = `Analizando: ${dev.name}...`;
 
-                        // BUSCAMOS ODOMETRO INICIAL: El último valor antes del 1 de enero del año seleccionado
+                        // BUSCAMOS ODOMETRO INICIAL: El primero disponible A PARTIR del 1 de enero
                         const resIni = await api.call("Get", {
                             typeName: "StatusData",
                             resultsLimit: 1,
                             search: {
                                 deviceSearch: { id: dev.id },
                                 diagnosticSearch: { id: "DiagnosticOdometerId" },
-                                toDate: `${year}-01-01T00:00:01Z` 
+                                fromDate: `${year}-01-01T00:00:00Z`
                             }
                         });
 
-                        // BUSCAMOS ODOMETRO FINAL: El último valor antes de que termine el 31 de diciembre
+                        // BUSCAMOS ODOMETRO FINAL: El último disponible HASTA el 31 de diciembre
                         const resFin = await api.call("Get", {
                             typeName: "StatusData",
                             resultsLimit: 1,
@@ -50,42 +47,27 @@ geotab.addin.reporteKm = () => {
                         });
 
                         if (resIni.length > 0 && resFin.length > 0) {
-                            // Geotab devuelve metros. Convertimos a KM con 2 decimales fijos.
                             const inicialKM = resIni[0].data / 1000;
                             const finalKM = resFin[0].data / 1000;
                             const totalKM = finalKM - inicialKM;
 
-                            // Solo añadimos si hay un movimiento lógico (evitar errores de datos)
+                            // Solo procesamos si el dato final es posterior o igual al inicial
                             if (totalKM >= 0) {
-                                const fila = {
-                                    nombre: dev.name,
-                                    matricula: dev.licensePlate || "S/M",
-                                    ini: inicialKM.toFixed(2),
-                                    fin: finalKM.toFixed(2),
-                                    total: totalKM.toFixed(2)
-                                };
-                                listado.push(fila);
-                                
-                                tbody.innerHTML += `
-                                    <tr>
-                                        <td>${fila.nombre}</td>
-                                        <td><strong>${fila.matricula}</strong></td>
-                                        <td class="km-val">${parseFloat(fila.ini).toLocaleString('es-ES')} km</td>
-                                        <td class="km-val">${parseFloat(fila.fin).toLocaleString('es-ES')} km</td>
-                                        <td class="km-val total-highlight">${parseFloat(fila.total).toLocaleString('es-ES')} km</td>
-                                    </tr>`;
+                                listado.push({
+                                    n: dev.name,
+                                    m: dev.licensePlate || "-",
+                                    i: inicialKM,
+                                    f: finalKM,
+                                    t: totalKM
+                                });
                             }
                         }
                     }
-                    
-                    statusBar.className = "success";
-                    statusBar.innerText = `¡Completado! Se han procesado ${listado.length} vehículos con datos de tacógrafo.`;
+                    renderTabla(listado);
+                    statusBar.innerText = `¡Completado! ${listado.length} vehículos procesados.`;
                     btnCsv.style.display = "inline-block";
-                    
                 } catch (e) {
-                    statusBar.className = "loading"; // Usar estilo de aviso para el error
-                    statusBar.innerText = "Error en la API: " + e.message;
-                    console.error(e);
+                    statusBar.innerText = "Error: " + e.message;
                 } finally {
                     btn.disabled = false;
                 }
@@ -94,16 +76,28 @@ geotab.addin.reporteKm = () => {
             btnCsv.addEventListener("click", () => {
                 let csv = "\uFEFFVehículo;Matrícula;Odo Inicial (km);Odo Final (km);Total Anual (km)\n";
                 listado.forEach(r => {
-                    csv += `${r.nombre};${r.matricula};${r.ini.replace('.',',')};${r.fin.replace('.',',')};${r.total.replace('.',',')}\n`;
+                    csv += `${r.n};${r.m};${r.i.toFixed(2).replace('.',',')};${r.f.toFixed(2).replace('.',',')};${r.t.toFixed(2).replace('.',',')}\n`;
                 });
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `KM_Tacho_${document.getElementById("selYear").value}.csv`;
+                link.download = `Reporte_Gasoleo_${document.getElementById("selYear").value}.csv`;
                 link.click();
             });
-
             callback();
         }
     };
 };
+
+function renderTabla(data) {
+    const tbody = document.querySelector("#tblData tbody");
+    tbody.innerHTML = data.map(r => `
+        <tr>
+            <td>${r.n}</td>
+            <td style="font-weight:bold">${r.m}</td>
+            <td class="num">${r.i.toLocaleString('es-ES', {minimumFractionDigits: 2})} km</td>
+            <td class="num">${r.f.toLocaleString('es-ES', {minimumFractionDigits: 2})} km</td>
+            <td class="num total">${r.t.toLocaleString('es-ES', {minimumFractionDigits: 2})} km</td>
+        </tr>
+    `).join('');
+}
