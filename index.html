@@ -2,90 +2,77 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Reporte Gasóleo Profesional</title>
+    <title>Reporte Gasóleo Profesional v20.0</title>
     <style>
-        /* Tipografía y fondo oficial de Geotab */
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 25px; background: #f4f7f6; color: #253746; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 25px; background: #f4f7f6; color: #333; }
+        .main-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 1200px; margin: auto; }
         
-        /* Contenedor principal ensanchado */
-        .main-card { background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 1200px; margin: auto; }
-        
-        /* Cabecera con icono nativo SVG */
+        /* SOLUCIÓN ICONO GIGANTE: Forzamos el tamaño de los SVG */
+        .icon-fix { width: 32px !important; height: 32px !important; margin-right: 15px; fill: #2780e3; flex-shrink: 0; }
         .header-title { display: flex; align-items: center; border-bottom: 2px solid #e0e6eb; padding-bottom: 15px; margin-bottom: 25px; }
-        .header-title svg { width: 32px; height: 32px; margin-right: 15px; fill: #2780e3; }
-        .header-title h2 { margin: 0; font-size: 26px; font-weight: 600; color: #253746; }
+        .header-title h2 { margin: 0; font-size: 24px; color: #253746; }
         
-        /* Controles (Selectores y Botones) */
-        .controls { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-        .controls label { font-weight: 600; color: #5a6872; }
-        select { padding: 8px 15px; border-radius: 4px; border: 1px solid #caced1; font-size: 14px; outline: none; cursor: pointer; }
+        .controls { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
+        select { padding: 8px 12px; border-radius: 4px; border: 1px solid #caced1; outline: none; }
         
-        /* Botones estilo Dashboard */
-        .btn { padding: 10px 20px; border-radius: 4px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; }
+        .btn { padding: 10px 20px; border-radius: 4px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; }
         .btn-primary { background: #2780e3; color: white; }
         .btn-primary:hover { background: #1c65b2; }
-        .btn-primary:disabled { background: #a5c6ea; cursor: not-allowed; }
+        .btn-primary:disabled { background: #cbd5e0; cursor: not-allowed; }
         
-        .btn-success { background: #008767; color: white; display: none; } /* Oculto hasta que hay datos */
+        .btn-success { background: #008767; color: white; display: none; }
         .btn-success:hover { background: #006b52; }
+        .download-icon { width: 18px !important; height: 18px !important; margin-right: 8px; fill: white; }
+
+        #status-bar { padding: 12px; background: #eef3f8; color: #253746; border-left: 4px solid #2780e3; border-radius: 4px; margin-bottom: 20px; }
         
-        /* Barra de progreso / estado */
-        #status-bar { padding: 15px; background: #eef3f8; color: #253746; border-left: 4px solid #2780e3; border-radius: 4px; margin-bottom: 25px; font-size: 15px; }
+        /* DISEÑO TABLA PREMIUM CON SEPARADORES CLAROS */
+        .table-premium { width: 100%; border-collapse: collapse; border: 1px solid #caced1; border-radius: 4px; overflow: hidden; }
+        .table-premium th { background: #f0f3f6; color: #5a6872; padding: 12px; text-align: left; border: 1px solid #caced1; font-size: 12px; text-transform: uppercase; font-weight: bold; }
+        .table-premium td { padding: 10px 12px; border: 1px solid #caced1; font-size: 14px; }
+        .table-premium tr:hover { background-color: #f8fbfc; }
         
-        /* Estilos de la Tabla (Bordes, separadores y hover) */
-        .table-container { overflow-x: auto; border: 1px solid #e0e6eb; border-radius: 6px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { background: #f8f9fa; color: #5a6872; padding: 15px; text-align: left; border-bottom: 2px solid #e0e6eb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { padding: 12px 15px; border-bottom: 1px solid #e0e6eb; color: #253746; }
-        tr:last-child td { border-bottom: none; } /* Quita el borde de la última fila */
-        tr:hover { background-color: #f4f7f6; } /* Efecto al pasar el ratón */
-        
-        /* Alineación y colores especiales para números */
         .num { text-align: right; }
-        .total-col { font-weight: bold; color: #004683; background: #fafbfc; border-left: 1px solid #e0e6eb; }
+        .total-col { font-weight: bold; color: #004683; background: #fafbfc; }
+        .cell-name { width: 25%; }
+        .cell-odo { width: 18%; }
     </style>
 </head>
 <body>
     <div class="main-card">
         <div class="header-title">
-            <svg viewBox="0 0 24 24">
-                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M15.8,20H14V16H15.8C16.8,16 17.6,16.8 17.6,17.8V18.2C17.6,19.2 16.8,20 15.8,20M10,20H8.2C7.2,20 6.4,19.2 6.4,18.2V17.8C6.4,16.8 7.2,16 8.2,16H10V20M8.2,14.5C6.4,14.5 5,15.9 5,17.7V18.3C5,20.1 6.4,21.5 8.2,21.5H10.5V14.5H8.2M13.5,14.5V21.5H15.8C17.6,21.5 19,20.1 19,18.3V17.7C19,15.9 17.6,14.5 15.8,14.5H13.5M13,9V3.5L18.5,9H13Z" />
-            </svg>
-            <h2>Reporte de Kilometraje (Gasóleo Profesional)</h2>
+            <svg class="icon-fix" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M13,9V3.5L18.5,9H13Z" /></svg>
+            <h2>Odómetro Oficial CAN / TGD (v20.0)</h2>
         </div>
         
         <div class="controls">
-            <label for="selYear">Ejercicio Fiscal:</label>
+            <span>Ejercicio Fiscal:</span>
             <select id="selYear">
                 <option value="2024">2024</option>
                 <option value="2025" selected>2025</option>
                 <option value="2026">2026</option>
             </select>
-            
             <button id="btnRun" class="btn btn-primary">Generar Informe</button>
-            
             <button id="btnExport" class="btn btn-success">
-                <svg style="width:18px;height:18px;margin-right:8px;fill:white;" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M12,19L8,15H10.5V12H13.5V15H16L12,19M13,9V3.5L18.5,9H13Z" /></svg>
+                <svg class="download-icon" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M12,19L8,15H10.5V12H13.5V15H16L12,19M13,9V3.5L18.5,9H13Z" /></svg>
                 Descargar CSV
             </button>
         </div>
 
-        <div id="status-bar">Listo para iniciar el análisis. Seleccione el año y haga clic en "Generar Informe".</div>
+        <div id="status-bar">Listo para analizar la flota.</div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Vehículo</th>
-                        <th>Matrícula</th>
-                        <th class="num">Odómetro Inicial (km)</th>
-                        <th class="num">Odómetro Final (km)</th>
-                        <th class="num">Total Recorrido</th>
-                    </tr>
-                </thead>
-                <tbody id="tblBody"></tbody>
-            </table>
-        </div>
+        <table class="table-premium">
+            <thead>
+                <tr>
+                    <th>Vehículo</th>
+                    <th>Matrícula</th>
+                    <th class="num">Odómetro Inicial (km)</th>
+                    <th class="num">Odómetro Final (km)</th>
+                    <th class="num">Total Recorrido</th>
+                </tr>
+            </thead>
+            <tbody id="tblBody"></tbody>
+        </table>
     </div>
     <script src="app.js"></script>
 </body>
