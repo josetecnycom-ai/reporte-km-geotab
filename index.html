@@ -1,53 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Gasóleo Profesional v2.0</title>
+    <meta charset="utf-8">
+    <title>Reporte Gasóleo v3.0</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f7f9fa; margin: 0; padding: 25px; color: #333; }
-        .geotab-card { background: white; border: 1px solid #d1d9e0; border-radius: 4px; max-width: 1100px; margin: 0 auto; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        h1 { color: #243665; font-size: 20px; margin-top: 0; border-bottom: 2px solid #243665; padding-bottom: 10px; }
-        .controls { background: #f0f2f5; padding: 15px; border-radius: 4px; display: flex; gap: 15px; align-items: center; margin-bottom: 20px; border: 1px solid #e1e4e8; }
-        select { padding: 8px; border-radius: 3px; border: 1px solid #ccc; }
-        button { background: #243665; color: white; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #1a284d; }
-        #btnCsv { background: #28a745; }
-        #status-bar { font-size: 13px; font-weight: bold; color: #243665; margin: 10px 0; }
-        table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #e1e4e8; }
-        th { background: #f8f9fa; color: #555; font-size: 11px; text-transform: uppercase; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
-        td { padding: 12px; font-size: 13px; border-bottom: 1px solid #eee; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        .highlight { font-weight: bold; color: #243665; background-color: #f1f4ff; }
-        tr:hover { background-color: #fafafa; }
+        /* Estilos forzados para evitar que Geotab los anule */
+        #mi-addin-contenedor { font-family: 'Segoe UI', Arial, sans-serif; padding: 25px; background: #fff; border: 1px solid #ddd; max-width: 1200px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        h1 { color: #243665; border-bottom: 2px solid #243665; padding-bottom: 10px; font-size: 22px; }
+        .controles { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #eee; display: flex; gap: 15px; align-items: center; }
+        .btn { padding: 10px 15px; background: #243665; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #1a284d; }
+        .btn-verde { background: #28a745; }
+        .btn-verde:hover { background: #218838; }
+        #status-bar { font-weight: bold; padding: 10px; background: #e9ecef; border-radius: 4px; margin-bottom: 15px; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #243665; color: white; padding: 12px; text-align: left; font-size: 13px; }
+        td { border-bottom: 1px solid #ddd; padding: 12px; font-size: 14px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
     </style>
 </head>
 <body>
-    <div class="geotab-card">
-        <h1>⛽ Reporte Gasóleo Profesional (v2.1 - Optimizado)</h1>
-        <div class="controls">
-            <label style="font-size: 13px; font-weight: bold;">Ejercicio:</label>
-            <select id="selYear">
+    <div id="mi-addin-contenedor">
+        <h1>⛽ Reporte Gasóleo Profesional (v3.0 - Resiliente)</h1>
+        
+        <div class="controles">
+            <label><strong>Año Fiscal:</strong></label>
+            <select id="selYear" style="padding: 8px;">
                 <option value="2024">2024</option>
                 <option value="2025" selected>2025</option>
             </select>
-            <button id="btnRun">Generar Informe</button>
-            <button id="btnCsv" style="display:none;">Descargar CSV</button>
+            <button id="btnRun" class="btn">▶ Generar Informe</button>
+            <button id="btnCsv" class="btn btn-verde" style="display:none;">⬇ Descargar Excel</button>
         </div>
-        <div id="status-bar">Cargue los archivos en GitHub y refresque la página.</div>
-        <table>
+
+        <div id="status-bar">Presione "Generar Informe" para comenzar.</div>
+
+        <table id="tblData">
             <thead>
                 <tr>
                     <th style="width: 25%;">Vehículo</th>
                     <th style="width: 15%;">Matrícula</th>
-                    <th style="width: 20%; text-align: right;">Odómetro Inicial</th>
-                    <th style="width: 20%; text-align: right;">Odómetro Final</th>
-                    <th style="width: 20%; text-align: right;">KM Totales</th>
+                    <th style="width: 20%; text-align:right;">Odo. Inicial (km)</th>
+                    <th style="width: 20%; text-align:right;">Odo. Final (km)</th>
+                    <th style="width: 20%; text-align:right;">Total Recorrido</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
