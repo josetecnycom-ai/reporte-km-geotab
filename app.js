@@ -4,12 +4,12 @@ geotab.addin.reporteKm = () => {
         initialize(api, state, callback) {
             const btn = document.getElementById("btnRun");
             const btnCsv = document.getElementById("btnCsv");
-            const statusBar = document.getElementById("status-bar");
+            const status = document.getElementById("status-bar");
             
             btn.addEventListener("click", async () => {
                 btn.disabled = true;
-                statusBar.style.display = "block";
-                statusBar.innerText = "Consultando flota y datos de tacógrafo...";
+                status.style.display = "block";
+                status.innerText = "Sincronizando con MyGeotab...";
                 
                 const year = document.getElementById("selYear").value;
                 const tbody = document.querySelector("#tblData tbody");
@@ -22,20 +22,9 @@ geotab.addin.reporteKm = () => {
                     devices.sort((a, b) => a.name.localeCompare(b.name));
                     
                     for (const dev of devices) {
-                        statusBar.innerText = `Analizando: ${dev.name}...`;
+                        status.innerText = `Consultando tacógrafo: ${dev.name}...`;
 
-                        // BUSCAMOS ODOMETRO INICIAL: El primero disponible A PARTIR del 1 de enero
-                        const resIni = await api.call("Get", {
-                            typeName: "StatusData",
-                            resultsLimit: 1,
-                            search: {
-                                deviceSearch: { id: dev.id },
-                                diagnosticSearch: { id: "DiagnosticOdometerId" },
-                                fromDate: `${year}-01-01T00:00:00Z`
-                            }
-                        });
-
-                        // BUSCAMOS ODOMETRO FINAL: El último disponible HASTA el 31 de diciembre
+                        // BUSCAR DATO FINAL (El último del año)
                         const resFin = await api.call("Get", {
                             typeName: "StatusData",
                             resultsLimit: 1,
@@ -46,37 +35,65 @@ geotab.addin.reporteKm = () => {
                             }
                         });
 
-                        if (resIni.length > 0 && resFin.length > 0) {
-                            const inicialKM = resIni[0].data / 1000;
-                            const finalKM = resFin[0].data / 1000;
-                            const totalKM = finalKM - inicialKM;
+                        // BUSCAR DATO INICIAL (El más cercano al 1 de enero)
+                        // Primero intentamos buscar el dato justo antes de empezar el año
+                        let resIni = await api.call("Get", {
+                            typeName: "StatusData",
+                            resultsLimit: 1,
+                            search: {
+                                deviceSearch: { id: dev.id },
+                                diagnosticSearch: { id: "DiagnosticOdometerId" },
+                                toDate: `${year}-01-01T00:00:00Z`
+                            }
+                        });
 
-                            // Solo procesamos si el dato final es posterior o igual al inicial
-                            if (totalKM >= 0) {
-                                listado.push({
-                                    n: dev.name,
-                                    m: dev.licensePlate || "-",
-                                    i: inicialKM,
-                                    f: finalKM,
-                                    t: totalKM
-                                });
+                        // Si no hay datos antes de enero (camión nuevo), buscamos el primero DESPUÉS de enero
+                        if (resIni.length === 0) {
+                            resIni = await api.call("Get", {
+                                typeName: "StatusData",
+                                resultsLimit: 1,
+                                search: {
+                                    deviceSearch: { id: dev.id },
+                                    diagnosticSearch: { id: "DiagnosticOdometerId" },
+                                    fromDate: `${year}-01-01T00:00:00Z`
+                                }
+                            });
+                        }
+
+                        if (resIni.length > 0 && resFin.length > 0) {
+                            const inicial = resIni[0].data / 1000;
+                            const final = resFin[0].data / 1000;
+                            const total = final - inicial;
+
+                            // Filtro de seguridad: Solo mostramos si hay datos coherentes y el camión se ha movido
+                            if (total >= 0) {
+                                const fila = { n: dev.name, m: dev.licensePlate || "-", i: inicial, f: final, t: total };
+                                listado.push(fila);
+                                
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${fila.n}</td>
+                                        <td><strong>${fila.m}</strong></td>
+                                        <td class="num">${fila.i.toLocaleString('es-ES', {minimumFractionDigits:1, maximumFractionDigits:1})} km</td>
+                                        <td class="num">${fila.f.toLocaleString('es-ES', {minimumFractionDigits:1, maximumFractionDigits:1})} km</td>
+                                        <td class="num total-col">${fila.t.toLocaleString('es-ES', {minimumFractionDigits:1, maximumFractionDigits:1})} km</td>
+                                    </tr>`;
                             }
                         }
                     }
-                    renderTabla(listado);
-                    statusBar.innerText = `¡Completado! ${listado.length} vehículos procesados.`;
+                    status.innerText = `Proceso finalizado. ${listado.length} vehículos con datos.`;
                     btnCsv.style.display = "inline-block";
                 } catch (e) {
-                    statusBar.innerText = "Error: " + e.message;
+                    status.innerText = "Error: " + e.message;
                 } finally {
                     btn.disabled = false;
                 }
             });
 
             btnCsv.addEventListener("click", () => {
-                let csv = "\uFEFFVehículo;Matrícula;Odo Inicial (km);Odo Final (km);Total Anual (km)\n";
+                let csv = "\uFEFFVehículo;Matrícula;Odo Inicial;Odo Final;Total Año\n";
                 listado.forEach(r => {
-                    csv += `${r.n};${r.m};${r.i.toFixed(2).replace('.',',')};${r.f.toFixed(2).replace('.',',')};${r.t.toFixed(2).replace('.',',')}\n`;
+                    csv += `${r.n};${r.m};${r.i.toFixed(1).replace('.',',')};${r.f.toFixed(1).replace('.',',')};${r.t.toFixed(1).replace('.',',')}\n`;
                 });
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
@@ -88,16 +105,3 @@ geotab.addin.reporteKm = () => {
         }
     };
 };
-
-function renderTabla(data) {
-    const tbody = document.querySelector("#tblData tbody");
-    tbody.innerHTML = data.map(r => `
-        <tr>
-            <td>${r.n}</td>
-            <td style="font-weight:bold">${r.m}</td>
-            <td class="num">${r.i.toLocaleString('es-ES', {minimumFractionDigits: 2})} km</td>
-            <td class="num">${r.f.toLocaleString('es-ES', {minimumFractionDigits: 2})} km</td>
-            <td class="num total">${r.t.toLocaleString('es-ES', {minimumFractionDigits: 2})} km</td>
-        </tr>
-    `).join('');
-}
