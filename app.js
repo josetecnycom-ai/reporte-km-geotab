@@ -7,61 +7,54 @@ geotab.addin.reporteKm = function () {
 
             btn.onclick = function () {
                 btn.disabled = true;
-                status.innerHTML = "<strong>Extrayendo datos de KPI diarios...</strong>";
                 tbody.innerHTML = "";
-                var year = document.getElementById("selYear").value;
+                status.innerText = "Consultando resúmenes diarios...";
 
-                // Pedimos el resumen de datos ya procesado (lo que Ace llama VehicleKPI_Daily)
                 api.call("Get", {
-                    typeName: "DeviceStatusInfo"
+                    typeName: "Device"
                 }, function (devices) {
-                    var procesados = 0;
-                    
-                    devices.forEach(function (deviceInfo) {
-                        var devId = deviceInfo.device.id;
-                        var name = deviceInfo.device.name || "Vehículo " + devId;
+                    var year = document.getElementById("selYear").value;
+                    var counts = 0;
 
-                        // Buscamos el primer y último registro del año para este dispositivo
+                    devices.forEach(function (device) {
+                        // Buscamos el resumen diario (DailyData) que es lo que usa Ace
                         api.call("Get", {
-                            typeName: "LogRecord",
-                            resultsLimit: 1,
+                            typeName: "DailyData",
                             search: {
-                                deviceSearch: { id: devId },
+                                deviceSearch: { id: device.id },
                                 fromDate: year + "-01-01T00:00:00Z",
-                                toDate: year + "-01-02T00:00:00Z"
+                                toDate: year + "-12-31T23:59:59Z"
                             }
-                        }, function (firstLog) {
-                            api.call("Get", {
-                                typeName: "LogRecord",
-                                resultsLimit: 1,
-                                search: {
-                                    deviceSearch: { id: devId },
-                                    toDate: (parseInt(year) + 1) + "-01-01T00:00:00Z"
-                                }
-                            }, function (lastLog) {
-                                if (firstLog.length > 0 && lastLog.length > 0) {
-                                    // Usamos los datos de motor resumidos
-                                    var ini = firstLog[0].distance / 1000;
-                                    var fin = lastLog[0].distance / 1000;
-                                    var total = fin - ini;
+                        }, function (dailyResults) {
+                            if (dailyResults && dailyResults.length > 0) {
+                                // Ordenamos para asegurar primer y último día
+                                dailyResults.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+                                
+                                var firstDay = dailyResults[0];
+                                var lastDay = dailyResults[dailyResults.length - 1];
 
-                                    if (total > 0 && fin < 1600000) {
-                                        var fila = "<tr>" +
-                                            "<td>" + name + "</td>" +
-                                            "<td style='text-align:right'>" + ini.toLocaleString('es-ES') + "</td>" +
-                                            "<td style='text-align:right'>" + fin.toLocaleString('es-ES') + "</td>" +
-                                            "<td style='text-align:right; font-weight:bold; color:#004683;'>" + total.toLocaleString('es-ES') + " km</td>" +
-                                            "</tr>";
-                                        tbody.innerHTML += fila;
-                                    }
+                                var odoIni = firstDay.odometer / 1000;
+                                var odoFin = lastDay.odometer / 1000;
+                                var total = odoFin - odoIni;
+
+                                // Filtro para evitar errores de centralita conocidos
+                                if (total > 0 && odoFin < 1600000) {
+                                    var row = "<tr>" +
+                                        "<td>" + device.name + "</td>" +
+                                        "<td>" + (device.licensePlate || "-") + "</td>" +
+                                        "<td>" + odoIni.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
+                                        "<td>" + odoFin.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
+                                        "<td style='font-weight:bold; color:blue'>" + total.toLocaleString('es-ES', {maximumFractionDigits:1}) + " km</td>" +
+                                        "</tr>";
+                                    tbody.innerHTML += row;
                                 }
-                                procesados++;
-                                status.innerText = "Vehículos analizados: " + procesados;
-                                if (procesados >= devices.length) {
-                                    status.innerHTML = "<strong>Reporte generado con éxito.</strong>";
-                                    btn.disabled = false;
-                                }
-                            });
+                            }
+                            counts++;
+                            status.innerText = "Procesados " + counts + " de " + devices.length;
+                            if (counts >= devices.length) {
+                                status.innerText = "Informe finalizado.";
+                                btn.disabled = false;
+                            }
                         });
                     });
                 });
