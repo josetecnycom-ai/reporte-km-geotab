@@ -8,55 +8,58 @@ geotab.addin.reporteKm = function () {
             btn.onclick = function () {
                 btn.disabled = true;
                 tbody.innerHTML = "";
-                status.innerText = "Consultando resúmenes diarios...";
+                status.innerText = "Iniciando consulta secuencial...";
 
-                api.call("Get", {
-                    typeName: "Device"
-                }, function (devices) {
+                api.call("Get", { typeName: "Device" }, function (devices) {
                     var year = document.getElementById("selYear").value;
-                    var counts = 0;
+                    var index = 0;
 
-                    devices.forEach(function (device) {
-                        // Buscamos el resumen diario (DailyData) que es lo que usa Ace
+                    function consultarSiguiente() {
+                        if (index >= devices.length) {
+                            status.innerText = "Proceso completado.";
+                            btn.disabled = false;
+                            return;
+                        }
+
+                        var dev = devices[index];
+                        status.innerText = "Analizando (" + (index + 1) + "/" + devices.length + "): " + dev.name;
+
+                        // Buscamos el odómetro exacto (DiagnosticOdometerId)
                         api.call("Get", {
-                            typeName: "DailyData",
+                            typeName: "StatusData",
+                            resultsLimit: 1,
                             search: {
-                                deviceSearch: { id: device.id },
-                                fromDate: year + "-01-01T00:00:00Z",
-                                toDate: year + "-12-31T23:59:59Z"
+                                deviceSearch: { id: dev.id },
+                                diagnosticSearch: { id: "DiagnosticOdometerId" },
+                                toDate: (parseInt(year) + 1) + "-01-01T00:00:00Z"
                             }
-                        }, function (dailyResults) {
-                            if (dailyResults && dailyResults.length > 0) {
-                                // Ordenamos para asegurar primer y último día
-                                dailyResults.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
-                                
-                                var firstDay = dailyResults[0];
-                                var lastDay = dailyResults[dailyResults.length - 1];
-
-                                var odoIni = firstDay.odometer / 1000;
-                                var odoFin = lastDay.odometer / 1000;
-                                var total = odoFin - odoIni;
-
-                                // Filtro para evitar errores de centralita conocidos
-                                if (total > 0 && odoFin < 1600000) {
-                                    var row = "<tr>" +
-                                        "<td>" + device.name + "</td>" +
-                                        "<td>" + (device.licensePlate || "-") + "</td>" +
-                                        "<td>" + odoIni.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
-                                        "<td>" + odoFin.toLocaleString('es-ES', {maximumFractionDigits:1}) + "</td>" +
-                                        "<td style='font-weight:bold; color:blue'>" + total.toLocaleString('es-ES', {maximumFractionDigits:1}) + " km</td>" +
-                                        "</tr>";
-                                    tbody.innerHTML += row;
+                        }, function (resFin) {
+                            api.call("Get", {
+                                typeName: "StatusData",
+                                resultsLimit: 1,
+                                search: {
+                                    deviceSearch: { id: dev.id },
+                                    diagnosticSearch: { id: "DiagnosticOdometerId" },
+                                    toDate: year + "-01-01T00:00:00Z"
                                 }
-                            }
-                            counts++;
-                            status.innerText = "Procesados " + counts + " de " + devices.length;
-                            if (counts >= devices.length) {
-                                status.innerText = "Informe finalizado.";
-                                btn.disabled = false;
-                            }
+                            }, function (resIni) {
+                                if (resIni.length > 0 && resFin.length > 0) {
+                                    var ini = resIni[0].data / 1000;
+                                    var fin = resFin[0].data / 1000;
+                                    var total = fin - ini;
+
+                                    if (total > 0 && fin < 1600000) {
+                                        var row = "<tr><td>" + dev.name + "</td><td>" + (dev.licensePlate || "-") + "</td><td>" + ini.toFixed(1) + "</td><td>" + fin.toFixed(1) + "</td><td style='font-weight:bold; color:blue'>" + total.toFixed(1) + " km</td></tr>";
+                                        tbody.innerHTML += row;
+                                    }
+                                }
+                                index++;
+                                // Pausa de 100ms entre vehículos para evitar bloqueos
+                                setTimeout(consultarSiguiente, 100);
+                            });
                         });
-                    });
+                    }
+                    consultarSiguiente();
                 });
             };
             callback();
