@@ -2,54 +2,39 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Reporte Tacógrafo</title>
+    <title>Reporte TGD</title>
     <style>
-        .addin-wrap { font-family: sans-serif; padding: 20px; background: #fff; color: #333; }
-        .addin-header { border-bottom: 2px solid #243665; margin-bottom: 20px; padding-bottom: 10px; }
-        .addin-header h1 { color: #243665; margin: 0; font-size: 22px; }
-        .addin-controls { background: #f4f6f8; padding: 15px; display: flex; gap: 15px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #ddd; }
-        .btn-run { background: #243665; color: #fff; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; font-weight: bold; }
-        .btn-run:hover { background: #1a284d; }
-        .btn-csv { background: #28a745; color: #fff; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; }
-        #status-bar { font-size: 14px; font-weight: bold; margin-bottom: 15px; }
+        body { font-family: sans-serif; padding: 20px; }
+        .header { border-bottom: 2px solid #243665; margin-bottom: 20px; }
+        .controls { background: #eee; padding: 15px; margin-bottom: 20px; display: flex; gap: 10px; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #243665; color: white; padding: 10px; text-align: left; font-size: 13px; }
-        td { border-bottom: 1px solid #eee; padding: 10px; font-size: 14px; }
-        tr:hover { background: #f9f9f9; }
+        th { background: #243665; color: white; padding: 10px; text-align: left; }
+        td { border-bottom: 1px solid #ccc; padding: 10px; }
+        .num { text-align: right; }
     </style>
 </head>
 <body>
-    <div class="addin-wrap">
-        <div class="addin-header">
-            <h1>⛽ Reporte KM Gasóleo (v4.0 - Tacógrafo TGD)</h1>
-            <p style="font-size:13px; color:#666; margin-top:5px;">Lectura directa del sensor del tacógrafo, ignorando la centralita (ECU).</p>
-        </div>
-        
-        <div class="addin-controls">
-            <select id="selYear" style="padding: 6px;">
-                <option value="2024">Año 2024</option>
-                <option value="2025" selected>Año 2025</option>
-            </select>
-            <button id="btnRun" class="btn-run">Generar Informe</button>
-            <button id="btnCsv" class="btn-csv" style="display:none;">Descargar CSV</button>
-        </div>
-
-        <div id="status-bar">Esperando inicio...</div>
-
-        <table id="tblData">
-            <thead>
-                <tr>
-                    <th style="width:25%">Vehículo</th>
-                    <th style="width:15%">Matrícula</th>
-                    <th style="width:20%; text-align:right">Odo. Inicial TGD</th>
-                    <th style="width:20%; text-align:right">Odo. Final TGD</th>
-                    <th style="width:20%; text-align:right">Total Año</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <div class="header">
+        <h1>⛽ Reporte Gasóleo Profesional v5.0 (Ajuste TGD)</h1>
     </div>
-
+    <div class="controls">
+        <select id="selYear"><option value="2024">2024</option><option value="2025" selected>2025</option></select>
+        <button id="btnRun">Generar Informe</button>
+        <button id="btnCsv" style="display:none;">Descargar CSV</button>
+    </div>
+    <div id="status-bar">Listo para procesar.</div>
+    <table id="tblData">
+        <thead>
+            <tr>
+                <th>Vehículo</th>
+                <th>Matrícula</th>
+                <th class="num">Odo Inicial (km)</th>
+                <th class="num">Odo Final (km)</th>
+                <th class="num">Recorrido</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
     <script src="app.js"></script>
 </body>
 </html>
