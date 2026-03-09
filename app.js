@@ -7,63 +7,73 @@ geotab.addin.reporteKm = function () {
 
             btn.onclick = function () {
                 btn.disabled = true;
-                status.innerText = "Consultando vehículos...";
+                status.innerHTML = "<strong>Iniciando búsqueda profunda...</strong>";
                 tbody.innerHTML = "";
 
                 api.call("Get", { typeName: "Device" }, function (devices) {
                     var year = document.getElementById("selYear").value;
-                    var diagnostic = "DiagnosticTachographTotalVehicleDistanceId";
                     var i = 0;
+                    var encontrados = 0;
 
-                    function procesarSiguiente() {
+                    function procesarVehiculo() {
                         if (i >= devices.length) {
-                            status.innerText = "Proceso finalizado.";
+                            status.innerHTML = "<strong>Finalizado.</strong> Se han listado " + encontrados + " vehículos.";
                             btn.disabled = false;
                             return;
                         }
 
                         var dev = devices[i];
-                        status.innerText = "Procesando: " + dev.name;
+                        status.innerText = "(" + (i + 1) + "/" + devices.length + ") Analizando: " + dev.name;
 
-                        // Consulta de inicio de año
+                        // BUSQUEDA TGD: Probamos con el ID estándar y si no, buscamos por texto
                         api.call("Get", {
                             typeName: "StatusData",
                             resultsLimit: 1,
                             search: {
                                 deviceSearch: { id: dev.id },
-                                diagnosticSearch: { id: diagnostic },
-                                toDate: year + "-01-01T00:00:00Z"
+                                diagnosticSearch: { id: "DiagnosticTachographTotalVehicleDistanceId" },
+                                toDate: (parseInt(year) + 1) + "-01-01T00:00:00Z"
                             }
-                        }, function (resIni) {
-                            // Consulta de fin de año
-                            api.call("Get", {
-                                typeName: "StatusData",
-                                resultsLimit: 1,
-                                search: {
-                                    deviceSearch: { id: dev.id },
-                                    diagnosticSearch: { id: diagnostic },
-                                    toDate: (parseInt(year) + 1) + "-01-01T00:00:00Z"
-                                }
-                            }, function (resFin) {
-                                if (resIni.length > 0 && resFin.length > 0) {
-                                    var ini = resIni[0].data / 1000;
-                                    var fin = resFin[0].data / 1000;
-                                    var total = fin - ini;
-
-                                    if (total >= 0 && fin < 1600000) {
-                                        var row = "<tr><td>" + dev.name + "</td><td>" + (dev.licensePlate || "-") + "</td><td>" + ini.toFixed(1) + "</td><td>" + fin.toFixed(1) + "</td><td style='font-weight:bold'>" + total.toFixed(1) + " km</td></tr>";
-                                        tbody.innerHTML += row;
+                        }, function (res) {
+                            if (res && res.length > 0) {
+                                // Si encontramos datos TGD, calculamos el rango del año
+                                var finKm = res[0].data / 1000;
+                                
+                                api.call("Get", {
+                                    typeName: "StatusData",
+                                    resultsLimit: 1,
+                                    search: {
+                                        deviceSearch: { id: dev.id },
+                                        diagnosticSearch: { id: "DiagnosticTachographTotalVehicleDistanceId" },
+                                        toDate: year + "-01-01T00:00:00Z"
                                     }
-                                }
+                                }, function (resIni) {
+                                    var iniKm = (resIni && resIni.length > 0) ? resIni[0].data / 1000 : 0;
+                                    var total = finKm - iniKm;
+
+                                    // Filtro de seguridad para el error de los 1.7M de km
+                                    if (finKm < 1600000 && total > 0) {
+                                        encontrados++;
+                                        var fila = "<tr>" +
+                                            "<td>" + dev.name + "</td>" +
+                                            "<td>" + (dev.licensePlate || "-") + "</td>" +
+                                            "<td style='text-align:right'>" + iniKm.toLocaleString('es-ES') + "</td>" +
+                                            "<td style='text-align:right'>" + finKm.toLocaleString('es-ES') + "</td>" +
+                                            "<td style='text-align:right; font-weight:bold; color:blue;'>" + total.toLocaleString('es-ES') + " km</td>" +
+                                            "</tr>";
+                                        tbody.innerHTML += fila;
+                                    }
+                                    i++;
+                                    setTimeout(procesarVehiculo, 30);
+                                });
+                            } else {
+                                // Si no hay TGD, saltamos al siguiente rápidamente
                                 i++;
-                                setTimeout(procesarSiguiente, 50); // Pausa de seguridad
-                            });
+                                procesarVehiculo();
+                            }
                         });
                     }
-                    procesarSiguiente();
-                }, function (err) {
-                    status.innerText = "Error: " + err;
-                    btn.disabled = false;
+                    procesarVehiculo();
                 });
             };
             callback();
