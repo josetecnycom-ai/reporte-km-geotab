@@ -2,58 +2,66 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Reporte KM</title>
+    <title>Reporte Gasóleo Profesional</title>
     <style>
-        body { font-family: "Segoe UI", Tahoma, sans-serif; background-color: #f7f7f7; padding: 30px; margin: 0; }
-        .addin-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 25px; max-width: 1000px; margin: auto; }
-        .header { border-bottom: 2px solid #243665; margin-bottom: 20px; padding-bottom: 10px; }
-        h1 { color: #243665; font-size: 24px; margin: 0; }
-        .controls { background: #eee; padding: 20px; border-radius: 6px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
-        button { background: #243665; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.3s; }
-        button:hover { background: #1a284d; }
-        button:disabled { background: #999; }
-        #btnCsv { background: #28a745; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { background: #243665; color: white; padding: 12px; text-align: left; font-size: 13px; text-transform: uppercase; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        :root { --geoblue: #243665; --geogreen: #28a745; --lightgray: #f8f9fa; }
+        body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background-color: #eeeeee; margin: 0; padding: 20px; }
+        .main-container { background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; padding: 30px; min-width: 800px; }
+        .header-section { border-bottom: 3px solid var(--geoblue); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; }
+        h1 { color: var(--geoblue); margin: 0; font-size: 22px; }
+        .toolbar { background: var(--lightgray); padding: 20px; border-radius: 8px; display: flex; gap: 20px; align-items: center; border: 1px solid #ddd; }
+        .info-text { font-size: 13px; color: #666; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        th { background: var(--geoblue); color: white; padding: 15px 10px; text-align: left; font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px 10px; border-bottom: 1px solid #eee; font-size: 14px; word-wrap: break-word; }
+        tr:nth-child(even) { background-color: #fafafa; }
         tr:hover { background-color: #f1f5ff; }
-        .total-cell { font-weight: bold; color: #243665; }
-        #status { font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #555; }
+        .km-val { font-family: 'Courier New', monospace; font-weight: bold; text-align: right; }
+        .total-highlight { color: var(--geoblue); font-size: 15px; }
+        button { padding: 12px 24px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        #btnRun { background: var(--geoblue); color: white; }
+        #btnRun:hover { background: #1a284d; }
+        #btnCsv { background: var(--geogreen); color: white; display: none; }
+        #status-bar { margin-top: 15px; padding: 10px; border-radius: 4px; font-size: 14px; font-weight: bold; }
+        .loading { color: #856404; background: #fff3cd; border: 1px solid #ffeeba; }
+        .success { color: #155724; background: #d4edda; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
-    <div class="addin-card">
-        <div class="header"><h1>⛽ Reporte Anual de Kilometraje (Gasóleo Profesional)</h1></div>
-        <p style="color: #666; font-size: 14px;">Datos extraídos directamente de los archivos TGD del tacógrafo.</p>
-        
-        <div class="controls">
-            <div>
-                <label style="font-weight:bold">Ejercicio Fiscal: </label>
-                <select id="selYear">
-                    <option value="2023">2023</option>
-                    <option value="2024" selected>2024</option>
-                    <option value="2025">2025</option>
-                </select>
-            </div>
-            <button id="btnRun">Generar Informe</button>
-            <button id="btnCsv" style="display:none;">Exportar Excel (.csv)</button>
+    <div class="main-container">
+        <div class="header-section">
+            <h1>⛽ Reporte KM Anuales (Gasóleo Profesional)</h1>
+            <div id="support-tag" style="font-size: 11px; color: #999;">Soporte: soporte@tecnoflotas.com</div>
         </div>
         
-        <div id="status">Listo para consultar.</div>
-        
+        <p class="info-text">Este reporte obtiene el último valor de odómetro registrado por el tacógrafo (TGD) antes de las fechas límite de cada año.</p>
+
+        <div class="toolbar">
+            <div>
+                <label style="font-weight:bold">Año Fiscal: </label>
+                <select id="selYear" style="padding: 8px; border-radius: 4px;">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+            </div>
+            <button id="btnRun">Generar Informe Completo</button>
+            <button id="btnCsv">Exportar Excel (CSV)</button>
+        </div>
+
+        <div id="status-bar" style="display:none;"></div>
+
         <table id="tblData">
             <thead>
                 <tr>
-                    <th>Vehículo</th>
-                    <th>Matrícula</th>
-                    <th>Odo. Inicial</th>
-                    <th>Odo. Final</th>
-                    <th>Total Recorrido</th>
+                    <th style="width: 25%;">Vehículo</th>
+                    <th style="width: 15%;">Matrícula</th>
+                    <th style="width: 20%; text-align: right;">Odo. Inicial</th>
+                    <th style="width: 20%; text-align: right;">Odo. Final</th>
+                    <th style="width: 20%; text-align: right;">KM Recorridos</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody></tbody>
         </table>
     </div>
     <script src="app.js"></script>
