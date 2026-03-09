@@ -16,75 +16,75 @@ geotab.addin.reporteKm = function () {
                 const DIAG_TGD = "DiagnosticTachographTotalVehicleDistanceId";
 
                 try {
-                    status.innerText = "Cargando lista de vehículos...";
+                    status.innerText = "Obteniendo lista de vehículos...";
                     const devices = await api.call("Get", { typeName: "Device" });
                     devices.sort((a, b) => a.name.localeCompare(b.name));
 
-                    status.innerText = `Analizando ${devices.length} vehículos...`;
+                    // FUNCIÓN PARA PAUSAR Y EVITAR BLOQUEOS
+                    const sleep = () => new Promise(r => setTimeout(r, 10));
 
-                    // Procesamos uno a uno pero con actualizaciones de UI constantes para que no se bloquee
                     for (let i = 0; i < devices.length; i++) {
                         const dev = devices[i];
-                        status.innerText = `Procesando (${i + 1}/${devices.length}): ${dev.name}`;
+                        status.innerHTML = `Procesando: <strong>${dev.name}</strong> (${i + 1}/${devices.length})`;
+                        
+                        // Pequeña pausa cada camión para que la web no se congele
+                        await sleep();
 
                         try {
-                            // Pedimos el primer y último dato del año en una sola promesa
-                            const [resIni, resFin] = await Promise.all([
-                                api.call("Get", {
-                                    typeName: "StatusData", resultsLimit: 1,
-                                    search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: DIAG_TGD }, fromDate: `${year}-01-01T00:00:00Z` }
-                                }),
-                                api.call("Get", {
-                                    typeName: "StatusData", resultsLimit: 1,
-                                    search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: DIAG_TGD }, toDate: `${year}-12-31T23:59:59Z` }
-                                })
-                            ]);
+                            // Buscamos el valor inicial y final
+                            const resIni = await api.call("Get", {
+                                typeName: "StatusData", resultsLimit: 1,
+                                search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: DIAG_TGD }, fromDate: `${year}-01-01T00:00:00Z` }
+                            });
+
+                            const resFin = await api.call("Get", {
+                                typeName: "StatusData", resultsLimit: 1,
+                                search: { deviceSearch: { id: dev.id }, diagnosticSearch: { id: DIAG_TGD }, toDate: `${year}-12-31T23:59:59Z` }
+                            });
 
                             if (resIni.length > 0 && resFin.length > 0) {
                                 let iKm = resIni[0].data / 1000;
                                 let fKm = resFin[0].data / 1000;
                                 
-                                // FILTRO CLAVE: Si el valor final es el error de 1.7 millones, lo descartamos
+                                // Saltamos si el dato es el error de 1.7 millones que vimos en capturas
                                 if (fKm > 1500000) continue; 
 
                                 let total = fKm - iKm;
 
                                 if (total >= 0) {
                                     listado.push({ n: dev.name, m: dev.licensePlate || "S/M", i: iKm, f: fKm, t: total });
-                                    tbody.innerHTML += `
-                                        <tr>
-                                            <td>${dev.name}</td>
-                                            <td><strong>${dev.licensePlate || "S/M"}</strong></td>
-                                            <td style="text-align:right">${iKm.toLocaleString('es-ES', {minimumFractionDigits:1})}</td>
-                                            <td style="text-align:right">${fKm.toLocaleString('es-ES', {minimumFractionDigits:1})}</td>
-                                            <td style="text-align:right; font-weight:bold; color:#243665; background:#f0f7fa;">${total.toLocaleString('es-ES', {minimumFractionDigits:1})} km</td>
-                                        </tr>`;
+                                    const row = `<tr>
+                                        <td>${dev.name}</td>
+                                        <td>${dev.licensePlate || "S/M"}</td>
+                                        <td style="text-align:right">${iKm.toLocaleString('es-ES',{minimumFractionDigits:1})}</td>
+                                        <td style="text-align:right">${fKm.toLocaleString('es-ES',{minimumFractionDigits:1})}</td>
+                                        <td style="text-align:right; font-weight:bold; background:#eef;">${total.toLocaleString('es-ES',{minimumFractionDigits:1})} km</td>
+                                    </tr>`;
+                                    tbody.insertAdjacentHTML('beforeend', row);
                                 }
                             }
-                        } catch (err) {
-                            console.warn("Sin datos para " + dev.name);
-                        }
+                        } catch (err) { console.warn("Error en camión " + dev.name); }
                     }
 
-                    status.innerText = `Informe finalizado. ${listado.length} vehículos procesados.`;
+                    status.innerText = `Finalizado. ${listado.length} vehículos con datos TGD.`;
                     if (listado.length > 0) btnCsv.style.display = "inline-block";
 
                 } catch (e) {
-                    status.innerText = "Error: " + e.message;
+                    status.innerText = "Error general: " + e.message;
                 } finally {
                     btn.disabled = false;
                 }
             });
 
             btnCsv.addEventListener("click", function () {
-                let csv = "\uFEFFVehículo;Matrícula;Km Inicial (TGD);Km Final (TGD);Total Recorrido\n";
+                let csv = "\uFEFFVehículo;Matrícula;Km Inicial;Km Final;Total\n";
                 listado.forEach(r => { 
                     csv += `${r.n};${r.m};${r.i.toFixed(1).replace('.',',')};${r.f.toFixed(1).replace('.',',')};${r.t.toFixed(1).replace('.',',')}\n`; 
                 });
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `KM_Oficiales_TGD_${new Date().getTime()}.csv`;
+                link.download = `Reporte_Kilometraje_TGD.csv`;
                 link.click();
             });
 
