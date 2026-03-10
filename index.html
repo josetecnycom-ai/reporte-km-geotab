@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Reporte Gasóleo Profesional v21.0</title>
+    <title>Reporte Gasóleo Profesional v22.0</title>
 </head>
 <body>
     <div id="gasoleo-report-container">
@@ -10,98 +10,38 @@
         <style>
             #gasoleo-report-container {
                 font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                background: white;
-                padding: 30px;
-                border-radius: 8px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-                max-width: 1200px;
-                margin: 20px auto;
-                color: #253746;
+                background: white; padding: 30px; border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 1300px; /* Ensanchado un poco más */
+                margin: 20px auto; color: #253746;
             }
-            #gasoleo-report-container .header-title {
-                display: flex;
-                align-items: center;
-                border-bottom: 2px solid #e0e6eb;
-                padding-bottom: 15px;
-                margin-bottom: 25px;
-            }
-            #gasoleo-report-container .header-title h2 {
-                margin: 0;
-                font-size: 24px;
-                color: #253746;
-            }
-            #gasoleo-report-container .controls {
-                display: flex;
-                gap: 15px;
-                margin-bottom: 20px;
-                align-items: center;
-            }
-            #gasoleo-report-container select {
-                padding: 8px 12px;
-                border-radius: 4px;
-                border: 1px solid #caced1;
-                outline: none;
-                font-size: 14px;
-            }
-            #gasoleo-report-container .btn {
-                padding: 10px 20px;
-                border-radius: 4px;
-                border: none;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                display: inline-flex;
-                align-items: center;
-            }
+            #gasoleo-report-container .header-title { display: flex; align-items: center; border-bottom: 2px solid #e0e6eb; padding-bottom: 15px; margin-bottom: 25px; }
+            #gasoleo-report-container .header-title h2 { margin: 0; font-size: 24px; color: #253746; }
+            #gasoleo-report-container .controls { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
+            #gasoleo-report-container select { padding: 8px 12px; border-radius: 4px; border: 1px solid #caced1; outline: none; font-size: 14px; }
+            #gasoleo-report-container .btn { padding: 10px 20px; border-radius: 4px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; }
             #gasoleo-report-container .btn-primary { background: #2780e3; color: white; }
             #gasoleo-report-container .btn-primary:hover { background: #1c65b2; }
             #gasoleo-report-container .btn-primary:disabled { background: #cbd5e0; cursor: not-allowed; }
             #gasoleo-report-container .btn-success { background: #008767; color: white; display: none; }
             #gasoleo-report-container .btn-success:hover { background: #006b52; }
+            #gasoleo-report-container #status-bar { padding: 12px; background: #eef3f8; border-left: 4px solid #2780e3; border-radius: 4px; margin-bottom: 20px; font-size: 15px; }
             
-            #gasoleo-report-container #status-bar {
-                padding: 12px;
-                background: #eef3f8;
-                border-left: 4px solid #2780e3;
-                border-radius: 4px;
-                margin-bottom: 20px;
-                font-size: 15px;
-            }
-            
-            /* TABLA BLINDADA: Aseguramos bordes y colores incluso dentro de Geotab */
-            #gasoleo-report-container .table-premium {
-                width: 100%;
-                border-collapse: collapse;
-                border: 1px solid #caced1;
-                border-radius: 4px;
-                overflow: hidden;
-            }
-            #gasoleo-report-container .table-premium th,
-            #gasoleo-report-container .table-premium td {
-                padding: 12px 15px;
-                border: 1px solid #caced1;
-                font-size: 14px;
-                text-align: left;
-            }
-            #gasoleo-report-container .table-premium th {
-                background: #f0f3f6 !important;
-                color: #5a6872;
-                text-transform: uppercase;
-                font-size: 12px;
-                font-weight: bold;
-            }
+            #gasoleo-report-container .table-premium { width: 100%; border-collapse: collapse; border: 1px solid #caced1; border-radius: 4px; overflow: hidden; }
+            #gasoleo-report-container .table-premium th, #gasoleo-report-container .table-premium td { padding: 10px 12px; border: 1px solid #caced1; font-size: 13px; text-align: left; }
+            #gasoleo-report-container .table-premium th { background: #f0f3f6 !important; color: #5a6872; text-transform: uppercase; font-size: 11px; font-weight: bold; }
             #gasoleo-report-container .table-premium tr:nth-child(even) { background-color: #fcfcfc; }
             #gasoleo-report-container .table-premium tr:hover { background-color: #f0f7ff; }
             
             #gasoleo-report-container .num { text-align: right !important; }
             #gasoleo-report-container .total-col { font-weight: bold; color: #004683; background: #fafbfc; }
+            #gasoleo-report-container .date-col { color: #5a6872; font-style: italic; white-space: nowrap; }
         </style>
 
         <div class="header-title">
             <svg width="32" height="32" style="margin-right: 15px; fill: #2780e3; flex-shrink: 0;" viewBox="0 0 24 24">
                 <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M13,9V3.5L18.5,9H13Z" />
             </svg>
-            <h2>Odómetro Oficial CAN / TGD (v21.0)</h2>
+            <h2>Auditoría de Odómetros (Gasóleo Profesional v22.0)</h2>
         </div>
         
         <div class="controls">
@@ -120,15 +60,18 @@
             </button>
         </div>
 
-        <div id="status-bar">Listo para analizar la flota.</div>
+        <div id="status-bar">Listo para auditar las lecturas y sus fechas exactas.</div>
 
         <table class="table-premium">
             <thead>
                 <tr>
                     <th>Vehículo</th>
                     <th>Matrícula</th>
-                    <th class="num">Odómetro Inicial (km)</th>
-                    <th class="num">Odómetro Final (km)</th>
+                    <th>Sensor</th>
+                    <th class="date-col">Fecha Inicial</th>
+                    <th class="num">Odo. Inicial (km)</th>
+                    <th class="date-col">Fecha Final</th>
+                    <th class="num">Odo. Final (km)</th>
                     <th class="num">Total Recorrido</th>
                 </tr>
             </thead>
