@@ -69,7 +69,7 @@ geotab.addin.reporteKm = function () {
                             function guardarDato(finKm, finDate) {
                                 if (finKm !== null) {
                                     var total = finKm - iniKm;
-                                    if (total >= 0 && finKm < 2000000) {
+                                    if (total >= 0 && finKm < 3000000) {
                                         reportData.push({
                                             name: dev.name,
                                             plate: dev.licensePlate || "-",
